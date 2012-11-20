@@ -46,6 +46,28 @@ function gumroad_product_type_form($form, &$form_state, $product_type, $op = 'ed
     '#type' => 'vertical_tabs',
   );
 
+  // Default button/overlay settings for this content type.
+  $form['gumroad_link'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Button & Overlay'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+    '#description' => '<p>' . t("Configure how Gumroad URLs appear and behave for this product type.") . '</p>',
+    '#tree' => TRUE,
+  );
+
+  $form['gumroad_link']['button'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use Gumroad Button Styles'),
+    '#default_value' => isset($product_type->settings['gumroad_link']['button']) ? $product_type->settings['gumroad_link']['button'] : FALSE,
+  );
+  $form['gumroad_link']['overlay'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Open links in overlay'),
+    '#default_value' => isset($product_type->settings['gumroad_link']['overlay']) ? $product_type->settings['gumroad_link']['overlay'] : FALSE,
+  );
+
   $form['webhook'] = array(
     '#type' => 'fieldset',
     '#title' => t('Webhook API'),
@@ -166,6 +188,7 @@ function gumroad_product_type_form($form, &$form_state, $product_type, $op = 'ed
 function gumroad_product_type_form_validate($form, &$form_state) {
   $values = &$form_state['values'];
   $webhook = &$values['webhook'];
+  $gumroad_link = &$values['gumroad_link'];
 
   // Ensure the webhook settings provided make sense.
   if ($webhook['webhook_status']) {
@@ -190,6 +213,9 @@ function gumroad_product_type_form_validate($form, &$form_state) {
     // If webhook processing is disabled, destroy the settings.
     $values['settings']['webhook'] = array();
   }
+
+  // Add Button & Overlay settings.
+  $values['settings']['gumroad_link'] = $gumroad_link;
 }
 
 

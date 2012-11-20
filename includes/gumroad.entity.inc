@@ -11,11 +11,11 @@
  */
 class GumroadProduct extends Entity {
   public $gumid = NULL;
-  public $author_uid = NULL;
+  public $title = '';
   public $gumroad_url = '';
-  public $webhook_url = '';
+  public $author_uid = NULL;
   public $created = '';
-  public $updated = '';
+  public $modified = '';
 
   public function __construct(array $values = array()) {
     // New product.
@@ -55,6 +55,46 @@ class GumroadProductController extends EntityAPIController {
   }
 
   public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
+    $bundle = gumroad_product_type_load($entity->type);
+    $button = $bundle->settings['gumroad_link']['button'];
+    $overlay = $bundle->settings['gumroad_link']['overlay'];
+    $display = field_extra_fields_get_display('gumroad_product', $entity->type, $view_mode);
+
+    // Attach JS if appropriate.
+    if ($button && $display['gumroad_url']['visible']) {
+      drupal_add_js(GUMROAD_BUTTON_JS, 'external');
+    }
+    if ($overlay && $display['gumroad_url']['visible']) {
+      drupal_add_js(GUMROAD_OVERLAY_JS, 'external');
+    }
+
+    // Theme the Gumroad URL like a normal field.
+    $class = $button ? array('gumroad-button') : array();
+    $content['gumroad_url'] = array(
+      '#theme' => 'field',
+      '#weight' => 0,
+      '#title' => t('Gumroad URL'),
+      '#access' => TRUE,
+      '#label_display' => 'hidden',
+      '#view_mode' => $view_mode,
+      '#language' => $langcode,
+      '#field_name' => 'gumroad_url',
+      '#field_type' => 'text',
+      '#entity_type' => 'gumroad_product',
+      '#bundle' => $entity->type,
+      '#items' => array(array('value' => $entity->gumroad_url)),
+      '#formatter' => 'text_default',
+      0 => array(
+        '#theme' => 'link',
+        '#text' => $entity->title,
+        '#path' => $entity->gumroad_url,
+        '#options' => array(
+          'attributes' => array('class' => $class),
+          'html' => FALSE,
+        ),
+      ),
+    );
+
     return parent::buildContent($entity, $view_mode, $langcode, $content);
   }
 }

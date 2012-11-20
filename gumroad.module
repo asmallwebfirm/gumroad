@@ -13,6 +13,18 @@ require_once(dirname(__FILE__) . '/includes/gumroad.crud.inc');
 
 
 /**
+ * Defines location of gumroad button JS.
+ */
+define('GUMROAD_BUTTON_JS', 'https://gumroad.com/js/gumroad-button.js');
+
+
+/**
+ * Defines location of gumroad overlay JS.
+ */
+define('GUMROAD_OVERLAY_JS', 'https://gumroad.com/js/gumroad.js');
+
+
+/**
  * Implements hook_menu().
  */
 function gumroad_menu() {
@@ -351,5 +363,16 @@ function gumroad_field_extra_fields_display_alter(&$displays, $context) {
         $displays['gumroad_url']['visible'] = FALSE;
         break;
     }
+  }
+}
+
+
+/**
+ * Implements hook_gumroad_product_view().
+ */
+function gumroad_gumroad_product_view($product, $view_mode) {
+  // Do not display the product title in the gumroad_link view mode.
+  if ($view_mode == 'gumroad_link') {
+    $product->title = '';
   }
 }
