@@ -99,7 +99,7 @@ function gumroad_product_overview() {
   $query = db_select('gumroad_product', 'g');
 
   // Selected fields
-  $query->fields('g', array('title', 'type', 'author_uid', 'gumroad_url', 'modified'));
+  $query->fields('g', array('gumid', 'title', 'type', 'author_uid', 'gumroad_url', 'modified'));
 
   // Set order by.
   $query->orderBy($order, $sort);
@@ -144,7 +144,7 @@ function gumroad_product_overview() {
  
     // Fill the table rows.
     $rows[] = array(
-      $data->title,
+      l($data->title, 'gumroad/' . $data->gumid),
       $type->label,
       l($account->name, 'user/' . $data->author_uid),
       l($data->gumroad_url, $data->gumroad_url),
