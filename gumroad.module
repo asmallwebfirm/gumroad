@@ -1,0 +1,355 @@
+<?php
+
+/**
+ * @file
+ * Hooks and functions for the gumroad module.
+ */
+
+
+/**
+ * Include gumroad product crud.
+ */
+require_once(dirname(__FILE__) . '/includes/gumroad.crud.inc');
+
+
+/**
+ * Implements hook_menu().
+ */
+function gumroad_menu() {
+  // Page to jump to gumroad add pages.
+  $items['gumroad/add'] = array(
+    'title' => 'Add Gumroad products',
+    'page callback' => 'gumroad_add_page',
+    'access callback' => 'gumroad_access',
+    'access arguments' => array('create', NULL),
+    'file' => 'includes/gumroad.pages.inc',
+  );
+
+  // Gumroad product overview page.
+  $items['admin/content/gumroad'] = array(
+    'title' => 'Gumroad',
+    'description' => 'Manage Gumroad products.',
+    'page callback' => 'gumroad_product_overview',
+    'access arguments' => array('administer gumroad products'),
+    'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+    'file' => 'includes/gumroad.pages.inc',
+  );
+
+  $gumroad_uri = 'gumroad/%gumroad_product';
+  $gumroad_uri_arg_position = 1;
+
+  // View a gumroad product.
+  $items[$gumroad_uri] = array(
+    'title callback' => 'entity_label',
+    'title arguments' => array('gumroad_product', $gumroad_uri_arg_position),
+    'page callback' => 'gumroad_product_view',
+    'page arguments' => array($gumroad_uri_arg_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 'gumroad_product', $gumroad_uri_arg_position),
+    'file' => 'includes/gumroad.pages.inc',
+  );
+
+  $items[$gumroad_uri . '/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  // Delete a gumroad product.
+  $items[$gumroad_uri . '/delete'] = array(
+    'title' => 'Delete task',
+    'title callback' => 'gumroad_product_label',
+    'title arguments' => array($gumroad_uri_arg_position),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gumroad_product_delete_form', $gumroad_uri_arg_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'gumroad_product', $gumroad_uri_arg_position),
+    'file' => 'includes/gumroad.forms.inc',
+  );
+
+  // Edit a gumroad product.
+  $items[$gumroad_uri . '/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gumroad_product_form', $gumroad_uri_arg_position),
+    'access callback' => 'entity_access',
+    'access arguments' => array('edit', 'gumroad_product', $gumroad_uri_arg_position),
+    'file' => 'includes/gumroad.forms.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  // Add gumroad products of specific types.
+  foreach (gumroad_product_types() as $type => $info) {
+    $items['gumroad/add/' . $type] = array(
+      'title' => 'Add gumroad product',
+      'page callback' => 'gumroad_product_add',
+      'page arguments' => array(2),
+      'access callback' => 'entity_access',
+      'access arguments' => array('create', 'gumroad_product', $type),
+      'file' => 'includes/gumroad.pages.inc',
+    );
+  }
+
+  // Delete gumroad product types.
+  $items['admin/structure/gumroad-product-types/%gumroad_product_type/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('gumroad_product_type_form_delete_confirm', 3),
+    'access arguments' => array('administer gumroad product types'),
+    'weight' => 1,
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'includes/gumroad.forms.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function gumroad_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'node/add' on 'admin/content' page.
+  if ($root_path == 'admin/content/gumroad') {
+    $item = menu_get_item('gumroad/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function gumroad_permission() {
+  // Administer gumroad types.
+  $permissions['administer gumroad product types'] = array(
+    'title' => t('Administer gumroad product types'),
+    'description' => t('Allows users to configure and import gumroad product types'),
+    'restrict access' => TRUE,
+  );
+
+  // Administer gumroad.
+  $permissions['administer gumroad products'] = array(
+    'title' => t('Administer gumroad'),
+    'description' => t('Allows users to configure gumroad products and their fields.'),
+    'restrict access' => TRUE,
+  );
+
+  // Create gumroad products.
+  $permissions['create gumroad products'] = array(
+    'title' => t('Create gumroad products'),
+    'description' => t('Allows users to create gumroad products'),
+    'restrict access' => TRUE,
+  );
+
+  // View gumroad products.
+  $permissions['view gumroad products'] = array(
+    'title' => t('View gumroad products'),
+    'description' => t('Allows users to view gumroad products.'),
+    'restrict access' => TRUE,
+  );
+
+  // Edit any gumroad product.
+  $permissions['edit any gumroad product'] = array(
+    'title' => t('Edit any gumroad product'),
+    'description' => t('Allows users to edit any gumroad product.'),
+    'restrict access' => TRUE,
+  );
+
+  // Edit own gumroad products.
+  $permissions['edit own gumroad products'] = array(
+    'title' => t('Edit own gumroad products'),
+    'description' => t('Allows users to edit their own gumroad products.'),
+    'restrict access' => TRUE,
+  );
+
+  return $permissions;
+}
+
+
+/**
+* Access callback for gumroad products.
+*/
+function gumroad_access($op, $product, $account = NULL, $entity_type = NULL) {
+  global $user;
+
+  $account = !isset($account) ? $user : $account;
+
+  switch ($op) {
+    case 'create':
+      return user_access('administer gumroad products', $account) || user_access('create gumroad products', $account);
+
+    case 'view':
+      return user_access('administer gumroad products', $account) || user_access('view gumroad products', $account);
+
+    case 'edit':
+      return user_access('administer gumroad products') || user_access('edit any gumroad product') || (user_access('edit own gumroad products') && ($product->uid == $account->uid));
+  }
+}
+
+
+/**
+ * Access callback for gumroad product types.
+ */
+function gumroad_product_type_access($op, $entity = NULL) {
+  return user_access('administer gumroad product types');
+}
+
+
+/**
+ * Implements hook_entity_info().
+ */
+function gumroad_entity_info() {
+  $entities['gumroad_product'] = array(
+    'label' => t('Gumroad product'),
+    'entity class' => 'GumroadProduct',
+    'controller class' => 'GumroadProductController',
+    'base table' => 'gumroad_product',
+    'fieldable' => TRUE,
+    'entity keys' => array(
+      'id' => 'gumid',
+      'bundle' => 'type',
+    ),
+    'bundle keys' => array(
+      'bundle' => 'type',
+    ),
+    'bundles' => array(),
+    'load hook' => 'gumroad_product_load',
+    'view modes' => array(
+      'full' => array(
+        'label' => t('Default'),
+        'custom settings' => FALSE,
+      ),
+      'gumroad_link' => array(
+        'label' => t('Gumroad link'),
+        'custom settings' => TRUE,
+      ),
+      'gumroad_purchased' => array(
+        'label' => t('Purchased'),
+        'custom settings' => TRUE,
+      ),
+    ),
+    'label callback' => 'entity_class_label',
+    'uri callback' => 'entity_class_uri',
+    'module' => 'gumroad',
+    'access callback' => 'gumroad_access',
+  );
+
+  $entities['gumroad_product_type'] = array(
+    'label' => t('Gumroad product type'),
+    'entity class' => 'GumroadProductType',
+    'controller class' => 'GumroadProductTypeController',
+    'base table' => 'gumroad_product_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'gumroad_product',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'type',
+      'label' => 'label',
+    ),
+    'module' => 'gumroad',
+    // Enable the entity API's admin UI.
+    'admin ui' => array(
+      'path' => 'admin/structure/gumroad-product-types',
+      'file' => 'includes/gumroad.forms.inc',
+      'controller class' => 'GumroadProductTypeUIController',
+    ),
+    'access callback' => 'gumroad_product_type_access',
+  );
+
+  return $entities;
+}
+
+
+/**
+* Implements hook_entity_info_alter().
+*/
+function gumroad_entity_info_alter(&$entity_info) {
+  foreach (gumroad_product_types() as $type => $info) {
+    $entity_info['gumroad_product']['bundles'][$type] = array(
+      'label' => $info->label,
+      'admin' => array(
+        'path' => 'admin/structure/gumroad-product-types/manage/%gumroad_product_type',
+        'real path' => 'admin/structure/gumroad-product-types/manage/' . $type,
+        'bundle argument' => 4,
+      ),
+    );
+  }
+}
+
+
+/**
+* Implements hook_entity_property_info_alter().
+*/
+function gumroad_entity_property_info_alter(&$info) {
+  $properties = &$info['gumroad_product']['properties'];
+
+  $properties['created'] = array(
+    'label' => t('Date created'),
+    'type' => 'date',
+    'description' => t('The date the gumroad product was created.'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer gumroad products',
+    'schema field' => 'created',
+  );
+  $properties['modified'] = array(
+    'label' => t('Date modified'),
+    'type' => 'date',
+    'schema field' => 'modified',
+    'description' => t('The date the gumroad product was most recently modified.'),
+  );
+  $properties['uid'] = array(
+    'label' => t('Creator'),
+    'type' => 'user',
+    'description' => t('The creator of the gumroad product.'),
+    'setter callback' => 'entity_property_verbatim_set',
+    'setter permission' => 'administer gumroad products',
+    'required' => TRUE,
+    'schema field' => 'author_uid',
+  );
+}
+
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function gumroad_field_extra_fields() {
+  $extra = array();
+
+  foreach (gumroad_product_types() as $type) {
+    $extra['gumroad_product'][$type->type] = array(
+      'display' => array(
+        'gumroad_url' => array(
+          'label' => t('Gumroad link'),
+          'description' => t('Link for this product on Gumroad.'),
+          'weight' => -4,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+
+/**
+ * Implements hook_field_extra_fields_display_alter().
+ */
+function gumroad_field_extra_fields_display_alter(&$displays, $context) {
+  $is_link = $context['view_mode'] == 'gumroad_link';
+
+  if ($context['entity_type'] == 'gumroad_product') {
+    switch ($context['view_mode']) {
+      case 'gumroad_purchased':
+        $displays['gumroad_url']['visible'] = FALSE;
+        break;
+    }
+  }
+}

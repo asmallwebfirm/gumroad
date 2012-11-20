@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Schema and installation hooks for gumroad module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function gumroad_schema() {
+  $schema['gumroad_product'] = array(
+    'description' => 'The base table for gumroad product entity.',
+    'fields' => array(
+      'gumid' => array(
+        'description' => 'The primary identifier for a gumroad product.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The {gumroad_product_type}.type of this gumroad product.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The title of the gumroad product.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'gumroad_url' => array(
+        'description' => 'The Gumroad url used to sell the item.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'author_uid' => array(
+        'description' => 'The uid of the user who created this gumroad product.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the gumroad product was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'modified' => array(
+        'description' => 'The Unix timestamp when the gumroad product was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'gumroad_created' => array('created'),
+    ),
+    'unique keys' => array(
+      'gumid' => array('gumid'),
+    ),
+    'foreign keys' => array(
+      'gumroad_product_author' => array(
+        'table' => 'users',
+        'columns' => array('author_uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('gumid'),
+  );
+
+  $schema['gumroad_product_type'] = array(
+    'description' => 'Stores information about all defined gumroad product types.',
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique gumroad product type ID.',
+      ),
+      'type' => array(
+        'description' => 'The machine-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'The human-readable name of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+        'translatable' => TRUE,
+      ),
+      'settings' => array(
+        'description' => 'Settings associated with this type.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,        
+      ),
+    ) + entity_exportable_schema_fields(),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'type' => array('type'),
+    ),
+  );
+
+  return $schema;
+}

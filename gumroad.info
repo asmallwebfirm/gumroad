@@ -1,0 +1,8 @@
+name = Gumroad
+description = Drupal integration with Gumroad.
+package = Other
+core = 7.x
+
+dependencies[] = entity
+
+files[] = includes/gumroad.entity.inc
