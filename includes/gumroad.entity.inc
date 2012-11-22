@@ -101,6 +101,47 @@ class GumroadProductController extends EntityAPIController {
 
 
 /**
+ * Optionally improves Inline Entity Form UX.
+ */
+if (class_exists('EntityInlineEntityFormController')) {
+  class GumroadProductInlineEntityFormController extends EntityInlineEntityFormController {
+    /**
+     * Provides entity-specific labels for use inline entity form.
+     */
+    public function labels() {
+      return array(
+        'singular' => t('product'),
+        'plural' => t('products'),
+      );
+    }
+
+    /**
+     * Some useful fields to return for the default table.
+     */
+    public function defaultFields($bundles) {
+      // Add the product title.
+      $fields['title'] = array(
+        'type' => 'property',
+        'label' => t('Title'),
+        'visible' => 1,
+        'weight' => 0,
+      );
+
+      // Add the gumroad URL.
+      $fields['gumroad_url'] = array(
+        'type' => 'property',
+        'label' => t('Gumroad URL'),
+        'visible' => 1,
+        'weight' => 1,
+      );
+
+      return $fields;
+    }
+  }
+}
+
+
+/**
  *
  */
 class GumroadProductTypeController extends EntityAPIControllerExportable {

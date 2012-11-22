@@ -251,6 +251,9 @@ function gumroad_entity_info() {
     'uri callback' => 'entity_class_uri',
     'module' => 'gumroad',
     'access callback' => 'gumroad_access',
+    'inline entity form' => array(
+      'controller' => 'GumroadProductInlineEntityFormController',
+    ),
   );
 
   $entities['gumroad_product_type'] = array(
