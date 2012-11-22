@@ -53,15 +53,16 @@ function gumroad_webhook_handling($product) {
         case 'field':
           $wrapper = entity_metadata_wrapper('gumroad_product', $product);
           $field = $settings['webhook']['webhook_enabled']['webhook_field'];
-          $field_info = field_info_instance('gumroad_product', $field, $product->type);
+          $field_info = field_info_field($field);
+          $field_instance_info = field_info_instance('gumroad_product', $field, $product->type);
           $error_details = format_string('Check that the %field field has content.', array(
-            '%field' => isset($field_info['label']) ? $field_info['label'] : $field,
+            '%field' => isset($field_instance_info['label']) ? $field_instance_info['label'] : $field,
           ));
 
           // Reactions based on the specified field type.
-          switch ($field_info['widget']['type']) {
+          switch ($field_info['type']) {
             // Handling for files.
-            case 'file_generic':
+            case 'file':
               $file = $wrapper->$field->value();
               $url = file_create_url($file['uri']);
               break;
