@@ -194,7 +194,11 @@ function gumroad_access($op, $product, $account = NULL, $entity_type = NULL) {
       return user_access('administer gumroad products', $account) || user_access('create gumroad products', $account);
 
     case 'view':
-      return user_access('administer gumroad products', $account) || user_access('view gumroad products', $account);
+      // Note that in order to allow webhook processing to occur, we have to
+      // allow all POST requests through. We do another user_access check at the
+      // end of webhook processing to ensure permissions are still respected.
+      // @see gumroad_webhook_handling()
+      return user_access('administer gumroad products', $account) || user_access('view gumroad products', $account) || $_SERVER['REQUEST_METHOD'] == 'POST';
 
     case 'edit':
       return user_access('administer gumroad products') || user_access('edit any gumroad product') || (user_access('edit own gumroad products') && ($product->uid == $account->uid));

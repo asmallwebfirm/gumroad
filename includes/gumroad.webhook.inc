@@ -110,4 +110,15 @@ function gumroad_webhook_handling($product) {
       ), WATCHDOG_ERROR);
     }
   }
+
+  // If we're here and the request method is POST, we have to recheck the user's
+  // access privileges. For details, @see gumroad_access()
+  if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    global $user;
+
+    // If the user has neither of these permissions, they do not have access.
+    if (!user_access('administer gumroad products', $user) && !user_access('view gumroad products', $user)) {
+      drupal_access_denied();
+    }
+  }
 }
