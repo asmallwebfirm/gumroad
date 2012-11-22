@@ -157,28 +157,24 @@ function gumroad_permission() {
   $permissions['create gumroad products'] = array(
     'title' => t('Create gumroad products'),
     'description' => t('Allows users to create gumroad products'),
-    'restrict access' => TRUE,
   );
 
   // View gumroad products.
   $permissions['view gumroad products'] = array(
     'title' => t('View gumroad products'),
     'description' => t('Allows users to view gumroad products.'),
-    'restrict access' => TRUE,
   );
 
   // Edit any gumroad product.
   $permissions['edit any gumroad product'] = array(
     'title' => t('Edit any gumroad product'),
     'description' => t('Allows users to edit any gumroad product.'),
-    'restrict access' => TRUE,
   );
 
   // Edit own gumroad products.
   $permissions['edit own gumroad products'] = array(
     'title' => t('Edit own gumroad products'),
     'description' => t('Allows users to edit their own gumroad products.'),
-    'restrict access' => TRUE,
   );
 
   return $permissions;
