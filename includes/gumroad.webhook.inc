@@ -15,7 +15,8 @@ function gumroad_webhook_handling($product) {
   $request_body = file_get_contents('php://input');
   parse_str($request_body, $webhook_params);
 
-  // Determine if this is a ping from Gumroad's webhook API.
+  // If there's request body data, assume it's coming from Gumroad.
+  // @todo There must be a better way to verify that it's coming from Gumroad.
   if (!empty($webhook_params)) {
     // Load this product type's settings.
     $type = gumroad_product_type_load($product->type);
@@ -25,71 +26,87 @@ function gumroad_webhook_handling($product) {
     if (isset($settings['webhook']['webhook_status']) && $settings['webhook']['webhook_status']) {
       // Allow other modules to react to a Gumroad webhook call.
       foreach (module_implements('gumroad_webhook_reaction') as $module) {
-        $url = module_invoke($module, 'gumroad_webhook_reaction', $product, $webhook_params);
-
-        // If the module implementation returned a URL, we can exit the loop.
-        if (!empty($url)) {
-          break;
-        }
+        $urls[$module] = module_invoke($module, 'gumroad_webhook_reaction', $product, $settings, $webhook_params);
       }
 
-      // If no module returned a URL, continue processing according to settings.
-      if (empty($url)) {
-        switch ($settings['webhook']['webhook_enabled']['webhook_type']) {
-          // Default webhook handling.
-          case 'default':
-            $e_url = entity_uri('gumroad_product', $product);
-            $e_url['options']['absolute'] = TRUE;
-            $url = url($e_url['path'], $e_url['options']);
-            break;
+      // Return a URL to Gumroad based on the content type settings.
+      switch ($settings['webhook']['webhook_enabled']['webhook_type']) {
+        // Default webhook handling.
+        case 'default':
+          $e_url = entity_uri('gumroad_product', $product);
+          $e_url['options']['absolute'] = TRUE;
+          $url = url($e_url['path'], $e_url['options']);
+          $error_details = format_string('Check !issue_queues for potential problems.', array(
+            '!issue_queues' => l('the Gumroad module issue queues', 'http://www.drupal.org/project/issues/gumroad'),
+          ));
+          break;
 
-          // Static webhook handling.
-          case 'static':
-            $url = $settings['webhook']['webhook_enabled']['webhook_url'];
-            break;
+        // Static webhook handling.
+        case 'static':
+          $url = $settings['webhook']['webhook_enabled']['webhook_url'];
+          $error_details = format_string('Check that the webhook API static URL is properly set on !product_type.', array(
+            '!product_type' => l('the Gumroad product type', 'admin/structure/gumroad-product-types/manage/' . $product->type),
+          ));
+          break;
 
-          // Field-based webhook handling.
-          case 'field':
-            $wrapper = entity_metadata_wrapper('gumroad_product', $product);
-            $field = $settings['webhook']['webhook_enabled']['webhook_field'];
+        // Field-based webhook handling.
+        case 'field':
+          $wrapper = entity_metadata_wrapper('gumroad_product', $product);
+          $field = $settings['webhook']['webhook_enabled']['webhook_field'];
+          $field_info = field_info_instance('gumroad_product', $field, $product->type);
+          $error_details = format_string('Check that the %field field has content.', array(
+            '%field' => isset($field_info['label']) ? $field_info['label'] : $field,
+          ));
 
-            // Reactions based on the specified field type.
-            switch ($wrapper->$field->type()) {
-              // Handling for files.
-              case 'field_item_file':
-                $file = $wrapper->$field->value();
-                $url = file_create_url($file['uri']);
-                break;
+          // Reactions based on the specified field type.
+          switch ($field_info['widget']['type']) {
+            // Handling for files.
+            case 'file_generic':
+              $file = $wrapper->$field->value();
+              $url = file_create_url($file['uri']);
+              break;
 
-              case 'field_item_link':
-                $link = $wrapper->$field->value();
-                $url = $link['url'];
-                break;
-            }
-            break;
-        }
+            case 'link_field':
+              $link = $wrapper->$field->value();
+              $url = $link['url'];
+              break;
+          }
+          break;
+
+        // Return the URL returned by the specified module.
+        case 'module':
+          $url = $urls[$settings['webhook']['webhook_enabled']['webhook_module']];
+          $module_info = system_get_info('module', $settings['webhook']['webhook_enabled']['webhook_module']);
+          $error_details = format_string('Check that the @module module is enabled and working properly.', array(
+            '@module' => $module_info['name'],
+          ));
+          break;
+      }
+
+      // If a URL was returned, pass it back to Gumroad.
+      if (!empty($url)) {
+        header('Content-type: text/plain');
+        echo $url;
+
+        // Perform normal Drupal shutdown operations and exit.
+        module_invoke_all('exit');
+        exit();
+      }
+      // Otherwise, there was a problem and it should be logged.
+      else {
+        watchdog('gumroad', 'Webhook ping was received on !product, but no URL was found to hand off to Gumroad. !details', array(
+          '!product' => l(entity_label('gumroad_product', $product), 'gumroad/' . entity_id('gumroad_product', $product)),
+          '!details' => $error_details,
+        ), WATCHDOG_ERROR);
       }
     }
-    // If webhook processing is not enabled, something is misconfigured. We'll
-    // log the error and return the path to the product entity as a backup.
+    // If webhook processing is not enabled, Gumroad is misconfigured.
     else {
-      $e_url = entity_uri('gumroad_product', $product);
-      $e_url['options']['absolute'] = TRUE;
-      $url = url($e_url['path'], $e_url['options']);
-
       // Log the error state.
-      watchdog('gumroad', 'Webhook ping from Gumroad was received on !product, but products of type @type do not have webhook processing enabled.<br /><br />You must either configure this product type for webhook processing or uncheck "Webhook" in the Gumroad interface for this product.', array(
+      watchdog('gumroad', 'Webhook ping was received on !product, but products of type @type do not have webhook processing enabled.<br /><br />You must either configure this product type for webhook processing or uncheck "Webhook" in the Gumroad interface for this product.', array(
         '!product' => l('gumroad/' . entity_id('gumroad_product', $product), entity_label('gumroad_product', $product)),
         '@type' => entity_label('gumroad_product_type', $type),
       ), WATCHDOG_ERROR);
     }
-
-    // At this point, we have a $url to return to Gumroad's API. 
-    header('Content-type: text/plain');
-    echo $url;
-
-    // Perform normal Drupal shutdown operations and exit.
-    module_invoke_all('exit');
-    exit();
   }
 }

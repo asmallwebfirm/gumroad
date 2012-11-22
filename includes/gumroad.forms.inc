@@ -105,17 +105,25 @@ function gumroad_product_type_form($form, &$form_state, $product_type, $op = 'ed
     ),
   );
 
+
+  // Webhook API type.
+  foreach (module_implements('returns_gumroad_webhook_url') as $module) {
+    $info = system_get_info('module', $module);
+    $returns_gumroad_webhook_url[$module] = $info['name'];
+  }
   $form['webhook']['webhook_enabled']['webhook_type'] = array(
     '#type' => 'radios',
     '#title' => t('Handler type'),
     '#options' => array(
-      'default' => t('None'),
+      'default' => t('No redirect'),
       'static' => t('Static URL'),
       'field' => t('Field attached to this product type'),
+      'module' => t('Module'),
     ),
     '#default_value' => isset($product_type->settings['webhook']['webhook_enabled']['webhook_type']) ? $product_type->settings['webhook']['webhook_enabled']['webhook_type'] : 'default',
   );
 
+  // Webhook API static URL handler.
   $form['webhook']['webhook_enabled']['webhook_url'] = array(
     '#type' => 'textfield',
     '#length' => 255,
@@ -129,12 +137,13 @@ function gumroad_product_type_form($form, &$form_state, $product_type, $op = 'ed
     ),
   );
 
+  // Webhook API file/link field handler.
   if (isset($product_type->type) && $options = _gumroad_get_webhook_field_fields($product_type->type)) {
     $form['webhook']['webhook_enabled']['webhook_field'] = array(
       '#type' => 'select',
       '#title' => t('Field'),
       '#options' => $options,
-      '#default_value' => variable_get('gumroad_product_' . $product_type->type . '_webhook_field', ''),
+      '#default_value' => isset($product_type->settings['webhook']['webhook_enabled']['webhook_field']) ? $product_type->settings['webhook']['webhook_enabled']['webhook_field'] : key($options),
       '#description' => t('After a successful transaction, customers will be directed to the file or link attached to products of this type.'),
       '#states' => array(
         'visible' => array(
@@ -151,6 +160,37 @@ function gumroad_product_type_form($form, &$form_state, $product_type, $op = 'ed
       '#states' => array(
         'visible' => array(
           ':input[name="webhook[webhook_enabled][webhook_type]"]' => array('value' => 'field'),
+        ),
+      ),
+      '#attributes' => array(
+        'style' => 'display:none;',
+      ),
+    );
+  }
+
+  // Webhook API module handler.
+  if (!empty($returns_gumroad_webhook_url)) {
+    $form['webhook']['webhook_enabled']['webhook_module'] = array(
+      '#type' => 'select',
+      '#title' => t('Module'),
+      '#options' => $returns_gumroad_webhook_url,
+      '#default_value' => isset($product_type->settings['webhook']['webhook_enabled']['webhook_module']) ? $product->settings['webhook']['webhook_enabled']['webhook_module'] : key($returns_gumroad_webhook_url),
+      '#description' => t('After a successful transaction, customers will be directed to the URL returned by the selected module.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="webhook[webhook_enabled][webhook_type]"]' => array('value' => 'module'),
+        ),
+      ),
+    );
+  }
+  else {
+    $form['webhook']['webhook_enabled']['webhook_module'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Module'),
+      '#description' => t('You must install a module that provides Gumroad webhook API URLs to use this option.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="webhook[webhook_enabled][webhook_type]"]' => array('value' => 'module'),
         ),
       ),
       '#attributes' => array(
@@ -202,6 +242,12 @@ function gumroad_product_type_form_validate($form, &$form_state) {
       case 'field':
         if (empty($webhook['webhook_enabled']['webhook_field'])) {
           form_set_error('webhook[webhook_enabled][webhook_field', t('You must provide a valid field when using the field webhook handler type.'));
+        }
+        break;
+
+      case 'module':
+        if (empty($webhook['webhook_enabled']['webhook_module'])) {
+          form_set_error('webhook[webhook_enabled][webhook_field', t('You must select a module when using the module webhook handler type.'));
         }
         break;
     }
@@ -363,7 +409,7 @@ function gumroad_product_form($form, &$form_state, $product) {
 /**
  * Wrapper for the Path module element validation function of a similar name.
  */
-function gumroad_path_form_element_validate($element, &$form_state, $complete_form) {
+function _gumroad_path_form_element_validate($element, &$form_state, $complete_form) {
   if (function_exists('path_form_element_validate')) {
     path_form_element_validate($element, $form_state, $complete_form);
   }

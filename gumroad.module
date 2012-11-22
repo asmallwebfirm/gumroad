@@ -376,3 +376,13 @@ function gumroad_gumroad_product_view($product, $view_mode) {
     $product->title = '';
   }
 }
+
+
+/**
+ * Wrapper for the gumroad path validation handler, which can be called via AJAX
+ * in some situations and fail because the function doesn't exist.
+ */
+function gumroad_path_form_element_validate($element, &$form_state, $complete_form) {
+  module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
+  _gumroad_path_form_element_validate($element, $form_state, $complete_form);
+}
