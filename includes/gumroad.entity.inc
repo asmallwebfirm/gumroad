@@ -162,6 +162,8 @@ if (class_exists('EntityInlineEntityFormController')) {
      * Submits our entity form.
      */
     public function entityFormSubmit(&$entity_form, &$form_state) {
+      parent::entityFormSubmit($entity_form, $form_state);
+
       module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
       $child_form_state = form_state_defaults();
       $child_form_state['values'] = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);

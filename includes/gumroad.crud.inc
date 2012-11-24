@@ -30,8 +30,8 @@ function gumroad_product_save($product) {
   entity_save('gumroad_product', $product);
 
   // Handle path aliases.
-  if (isset($product->path)) {
-    $path = $product->path;
+  if (isset($product->product_path)) {
+    $path = $product->product_path;
     $path['alias'] = trim($path['alias']);
 
     // Only save a non-empty alias.
@@ -41,6 +41,9 @@ function gumroad_product_save($product) {
       $path['source'] = 'gumroad/' . entity_id('gumroad_product', $product);
       $path['language'] = isset($langcode) ? $langcode : LANGUAGE_NONE;
       path_save($path);
+    }
+    elseif (empty($path['alias']) && !empty($path['pid'])) {
+      path_delete($path['pid']);
     }
   }
 }

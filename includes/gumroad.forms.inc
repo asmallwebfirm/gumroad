@@ -338,7 +338,7 @@ function gumroad_product_form($form, &$form_state, $product) {
   field_attach_form('gumroad_product', $product, $form, $form_state);
 
   // Additional settings.
-  $form['additional_settings'] = array(
+  $form['product_additional_settings'] = array(
     '#type' => 'vertical_tabs',
     '#weight' => 50,
   );
@@ -366,26 +366,26 @@ function gumroad_product_form($form, &$form_state, $product) {
   );
 
   // Add path alias settings.
-  $form['path'] = array(
+  $form['product_path'] = array(
     '#type' => 'fieldset',
     '#title' => t('URL path settings'),
     '#collapsible' => TRUE,
-    '#collapsed' => empty($path['alias']),
-    '#group' => 'additional_settings',
+    '#collapsed' => !empty($path['alias']),
+    '#group' => 'product_additional_settings',
     '#weight' => 30,
     '#tree' => TRUE,
     '#element_validate' => array('gumroad_path_form_element_validate'),
   );
-  $form['path']['alias'] = array(
+  $form['product_path']['alias'] = array(
     '#type' => 'textfield',
     '#title' => t('URL alias'),
     '#default_value' => $path['alias'],
     '#maxlength' => 255,
     '#description' => t('Optionally specify an alternative URL by which this product can be accessed. Use a relative path and don\'t add a trailing slash or the URL alias won\'t work.'),
   );
-  $form['path']['pid'] = array('#type' => 'value', '#value' => $path['pid']);
-  $form['path']['source'] = array('#type' => 'value', '#value' => $path['source']);
-  $form['path']['language'] = array('#type' => 'value', '#value' => $path['language']);
+  $form['product_path']['pid'] = array('#type' => 'value', '#value' => $path['pid']);
+  $form['product_path']['source'] = array('#type' => 'value', '#value' => $path['source']);
+  $form['product_path']['language'] = array('#type' => 'value', '#value' => $path['language']);
 
   // Submit/delete buttons.
   $form['actions'] = array('#type' => 'actions');
@@ -407,21 +407,18 @@ function gumroad_product_form($form, &$form_state, $product) {
 
 
 /**
- * Wrapper for the Path module element validation function of a similar name.
+ * Path validation handler; stolen more or less wholesale from Path module.
  */
 function _gumroad_path_form_element_validate($element, &$form_state, $complete_form) {
-  if (function_exists('path_form_element_validate')) {
-    path_form_element_validate($element, $form_state, $complete_form);
-  }
-  else {
+  if (isset($form_state['values']['product_path'])) {
     // Trim the submitted value.
-    $alias = trim($form_state['values']['path']['alias']);
+    $alias = trim($form_state['values']['product_path']['alias']);
     if (!empty($alias)) {
       form_set_value($element['alias'], $alias, $form_state);
       if (isset($form_state['values']['language'])) {
         form_set_value($element['language'], $form_state['values']['language'], $form_state);
       }
-      $path = $form_state['values']['path'];
+      $path = $form_state['values']['product_path'];
       $query = db_select('url_alias')
         ->condition('alias', $path['alias'])
         ->condition('language', $path['language']);
