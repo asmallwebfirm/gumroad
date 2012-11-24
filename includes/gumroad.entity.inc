@@ -137,6 +137,37 @@ if (class_exists('EntityInlineEntityFormController')) {
 
       return $fields;
     }
+
+    /**
+     * Loads our entity form.
+     */
+    public function entityForm($entity_form, &$form_state) {
+      module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
+      $product = $entity_form['#entity'];
+      return gumroad_product_form($entity_form, $form_state, $product);
+    }
+
+    /**
+     * Validates our entity form.
+     */
+    public function entityFormValidate($entity_form, &$form_state) {
+      module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
+      $child_form_state = form_state_defaults();
+      $child_form_state['values'] = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
+      $child_form_state['gumroad_product'] = $entity_form['#entity'];
+      gumroad_product_form_validate($entity_form, $child_form_state);
+    }
+
+    /**
+     * Submits our entity form.
+     */
+    public function entityFormSubmit(&$entity_form, &$form_state) {
+      module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
+      $child_form_state = form_state_defaults();
+      $child_form_state['values'] = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
+      $child_form_state['gumroad_product'] = $entity_form['#entity'];
+      gumroad_product_form_submit($entity_form, $child_form_state);
+    }
   }
 }
 
