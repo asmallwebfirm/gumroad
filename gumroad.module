@@ -114,6 +114,16 @@ function gumroad_menu() {
     'file' => 'includes/gumroad.forms.inc',
   );
 
+  // Provide callback for Gumroad Ping requests.
+  $items['gumroad/ping'] = array(
+    'title' => 'Gumroad Ping',
+    'description' => 'Common URL to handle Gumroad Pings.',
+    'page callback' => 'gumroad_ping_handler',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/gumroad.ping.inc',
+  );
+
   return $items;
 }
 

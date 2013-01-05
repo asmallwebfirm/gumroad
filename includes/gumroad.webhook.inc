@@ -95,7 +95,7 @@ function gumroad_webhook_handling($product) {
       }
       // Otherwise, there was a problem and it should be logged.
       else {
-        watchdog('gumroad', 'Webhook ping was received on !product, but no URL was found to hand off to Gumroad. !details', array(
+        watchdog('gumroad', 'Webhook API call was received on !product, but no URL was found to hand off to Gumroad. !details', array(
           '!product' => l(entity_label('gumroad_product', $product), 'gumroad/' . entity_id('gumroad_product', $product)),
           '!details' => $error_details,
         ), WATCHDOG_ERROR);
@@ -104,7 +104,7 @@ function gumroad_webhook_handling($product) {
     // If webhook processing is not enabled, Gumroad is misconfigured.
     else {
       // Log the error state.
-      watchdog('gumroad', 'Webhook ping was received on !product, but products of type @type do not have webhook processing enabled.<br /><br />You must either configure this product type for webhook processing or uncheck "Webhook" in the Gumroad interface for this product.', array(
+      watchdog('gumroad', 'Webhook API call was received on !product, but products of type @type do not have webhook processing enabled.<br /><br />You must either configure this product type for webhook processing or uncheck "Webhook" in the Gumroad interface for this product.', array(
         '!product' => l('gumroad/' . entity_id('gumroad_product', $product), entity_label('gumroad_product', $product)),
         '@type' => entity_label('gumroad_product_type', $type),
       ), WATCHDOG_ERROR);

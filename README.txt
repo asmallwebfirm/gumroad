@@ -26,6 +26,8 @@ Gumroad's Webhook API in Drupal.
     physical products that just need a "thank you" page.
   - Field: select a field attached to the product for dynamic routing. Useful if
     the product is a downloadable file (currently supports Link and File fields)
+* Gumroad Ping handling: does nothing by default, but allows modules to react to
+  a Ping call from Gumroad at example.com/gumroad/ping.
 
 
 -- INSTALLATION --
