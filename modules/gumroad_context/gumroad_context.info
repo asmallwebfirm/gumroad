@@ -1,0 +1,6 @@
+name = Gumroad Context
+description = Supplies Context conditions and reactions for the Gumroad module.
+dependencies[] = gumroad
+dependencies[] = context
+package = Context
+core = "7.x"

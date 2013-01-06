@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ * Hooks and functions for to the Gumroad Context module.
+ */
+
+
+/**
+ * Implements hook_context_plugins().
+ */
+function gumroad_context_context_plugins() {
+  $plugins = array();
+
+  $plugins['gumroad_context_context_condition_gumroad_product_type'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'gumroad_context') . '/plugins',
+      'file' => 'gumroad_context_context_condition_gumroad_product_type.inc',
+      'class' => 'gumroad_context_context_condition_gumroad_product_type',
+      'parent' => 'context_condition',
+    ),
+  );
+
+  return $plugins;
+}
+
+
+/**
+ * Implements hook_context_registry().
+ */
+function gumroad_context_context_registry() {
+  return array(
+    'conditions' => array(
+      'gumroad_product_type' => array(
+        'title' => t('Gumroad product type'),
+        'description' => t('Set this context on pages for Gumroad products of this type.'),
+        'plugin' => 'gumroad_context_context_condition_gumroad_product_type',
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_gumroad_product_view().
+ */
+function gumroad_context_gumroad_product_view($product, $view_mode, $langcode) {
+  if ($view_mode == 'full') {
+    if ($plugin = context_get_plugin('condition', 'gumroad_product_type')) {
+      $plugin->execute($product->type);
+    }
+  }
+}
