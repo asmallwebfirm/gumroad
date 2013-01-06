@@ -252,10 +252,6 @@ function gumroad_entity_info() {
         'label' => t('Gumroad link'),
         'custom settings' => TRUE,
       ),
-      'gumroad_purchased' => array(
-        'label' => t('Purchased'),
-        'custom settings' => TRUE,
-      ),
     ),
     'label callback' => 'entity_class_label',
     'uri callback' => 'entity_class_uri',
@@ -361,22 +357,6 @@ function gumroad_field_extra_fields() {
   }
 
   return $extra;
-}
-
-
-/**
- * Implements hook_field_extra_fields_display_alter().
- */
-function gumroad_field_extra_fields_display_alter(&$displays, $context) {
-  $is_link = $context['view_mode'] == 'gumroad_link';
-
-  if ($context['entity_type'] == 'gumroad_product') {
-    switch ($context['view_mode']) {
-      case 'gumroad_purchased':
-        $displays['gumroad_url']['visible'] = FALSE;
-        break;
-    }
-  }
 }
 
 

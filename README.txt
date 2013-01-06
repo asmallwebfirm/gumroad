@@ -14,12 +14,10 @@ Gumroad's Webhook API in Drupal.
 * Creates a "Gumroad product" entity.
 * Gumroad products are fieldable by product type.
 * Gumroad product types are exportable (Features support)
-* Gumroad products have two custom view modes out of the box:
-  - Gumroad Link (to only show a link to the Gumroad store; use-cases include
+* Gumroad products have a custom view mode "Gumroad Link":
+  - By default, only shows a link to the Gumroad store; use-cases include
     embedding Gumroad products on other content types via Entity Reference, use
-    in Views, etc.)
-  - Purchased (to show different fields based on whether or not the product has
-    been purchased; this functionality hasn't been built out yet.)
+    in Views, etc.
 * Gumroad Webhook API handling by product type; three modes out of the box:
   - No special handling: does nothing by default, but could be used for logging.
   - Static URL: provides a single URL for all products of that type. Useful for

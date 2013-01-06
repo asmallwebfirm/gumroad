@@ -95,10 +95,6 @@ class GumroadProductController extends EntityAPIController {
       ),
     );
 
-    // Allow modules to make their own additions to the product.
-    module_invoke_all('gumroad_product_view', $entity, $view_mode, $langcode);
-    module_invoke_all('entity_view', $entity, 'gumroad_product', $view_mode, $langcode);
-
     return parent::buildContent($entity, $view_mode, $langcode, $content);
   }
 }
