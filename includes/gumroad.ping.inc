@@ -19,6 +19,11 @@ function gumroad_ping_handler() {
     // Allow other modules to react to a Gumroad Ping.
     module_invoke_all('gumroad_ping_reaction', $ping_params);
 
+    // Invoke a Rules event, if available.
+    if (module_exists('rules')) {
+      rules_invoke_event('gumroad_ping', $ping_params);
+    }
+
     // Log the ping in watchdog.
     watchdog('gumroad', 'Gumroad ping was received.', array(), WATCHDOG_NOTICE);
 

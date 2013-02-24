@@ -29,6 +29,11 @@ function gumroad_webhook_handling($product) {
         $urls[$module] = module_invoke($module, 'gumroad_webhook_reaction', $product, $settings, $webhook_params);
       }
 
+      // Invoke a Rules event, if available.
+      if (module_exists('rules')) {
+        rules_invoke_event('gumroad_webhook', $webhook_params, $product);
+      }
+
       // Return a URL to Gumroad based on the content type settings.
       switch ($settings['webhook']['webhook_enabled']['webhook_type']) {
         // Default webhook handling.

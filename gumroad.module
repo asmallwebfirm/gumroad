@@ -379,3 +379,34 @@ function gumroad_path_form_element_validate($element, &$form_state, $complete_fo
   module_load_include('inc', 'gumroad', 'includes/gumroad.forms');
   _gumroad_path_form_element_validate($element, $form_state, $complete_form);
 }
+
+
+/**
+ * Implements hook_tokens().
+ */
+function gumroad_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  if ($type == 'gumroad_api') {
+    if (isset($data['gumroad_api'])) {
+      $replacements = array();
+      $mydata = $data['gumroad_api'];
+
+      foreach ($tokens as $name => $original) {
+        switch ($name) {
+          case 'email':
+            $replacements[$original] = $mydata['email'];
+            break;
+
+          case 'price':
+            $replacements[$original] = $mydata['price'];
+            break;
+
+          case 'variants':
+            $replacements[$original] = $mydata['variants'];
+            break;
+        }
+      }
+
+      return $replacements;
+    }
+  }
+}
