@@ -17,7 +17,7 @@ function gumroad_webhook_handling($product) {
 
   // If there's request body data, assume it's coming from Gumroad.
   // @todo There must be a better way to verify that it's coming from Gumroad.
-  if (!empty($webhook_params)) {
+  if (_gumroad_webhook_is_valid($webhook_params)) {
     // Load this product type's settings.
     $type = gumroad_product_type_load($product->type);
     $settings = $type->settings;
@@ -126,4 +126,19 @@ function gumroad_webhook_handling($product) {
       drupal_access_denied();
     }
   }
+}
+
+
+/**
+ * Helper function that attempts to validate that this webhook call is from
+ * Gumroad.
+ *
+ * @todo There must be a better way to verify that it's coming from Gumroad.
+ */
+function _gumroad_webhook_is_valid($data) {
+  $email = isset($data['email']);
+  $permalink = isset($data['permalink']);
+  $currency = isset($data['currency']);
+
+  return $email && $permalink && $currency;
 }
